@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL Studio AI</title>
+
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1" rel="stylesheet" />
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                    },
+                    colors: {
+                        background: '#09090b', // Zinc 950
+                        surface: '#18181b',    // Zinc 900
+                        border: '#27272a',     // Zinc 800
+                        primary: '#a855f7',    // Purple 500
+                        secondary: '#ec4899',  // Pink 500
+                        accent: '#06b6d4',     // Cyan 500
+                    },
+                    animation: {
+                        'gradient-x': 'gradient-x 3s ease infinite',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        'gradient-x': {
+                            '0%, 100%': {
+                                'background-size': '200% 200%',
+                                'background-position': 'left center'
+                            },
+                            '50%': {
+                                'background-size': '200% 200%',
+                                'background-position': 'right center'
+                            },
+                        },
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #09090b; color: #e4e4e7; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #09090b; }
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+
+        /* Glassmorphism utilities */
+        .glass {
+            background: rgba(24, 24, 27, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Langflow-style Node Glow */
+        .node-glow {
+            box-shadow: 0 0 20px -5px rgba(168, 85, 247, 0.15);
+            transition: all 0.3s ease;
+        }
+        .node-glow:hover {
+            box-shadow: 0 0 25px -5px rgba(168, 85, 247, 0.3);
+            border-color: rgba(168, 85, 247, 0.5);
+        }
+
+        .gradient-text {
+            background: linear-gradient(to right, #c084fc, #e879f9, #22d3ee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const BASE_URL = "http://localhost:8000";
+
+        // Sidebar Item (Database Table)
+        const TableItem = ({ tableName, columns }) => {
+            const [isOpen, setIsOpen] = useState(false);
+
+            return (
+                <div className="mb-2">
+                    <div
+                        onClick={() => setIsOpen(!isOpen)}
+                        className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white/5 cursor-pointer text-zinc-400 hover:text-white transition-all group select-none"
+                    >
+                        <span className="material-symbols-outlined text-[18px] group-hover:text-primary transition-colors">
+                            {isOpen ? 'table_view' : 'table_rows'}
+                        </span>
+                        <span className="text-sm font-medium font-mono">{tableName}</span>
+                        <span className="ml-auto material-symbols-outlined text-[16px] opacity-50">
+                            {isOpen ? 'expand_less' : 'expand_more'}
+                        </span>
+                    </div>
+
+                    {isOpen && (
+                        <div className="ml-4 pl-3 border-l border-border mt-1 space-y-1">
+                            {columns.map((col, idx) => (
+                                <div key={idx} className="flex justify-between text-xs py-1 text-zinc-500 hover:text-zinc-300">
+                                    <span className="font-mono truncate">{col.split(' ')[0]}</span>
+                                    <span className="text-[10px] opacity-60 ml-2">{col.split(' ').slice(1).join(' ')}</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // Chat Message (User & AI)
+        const MessageBubble = ({ message }) => {
+            const isAI = message.role === 'ai';
+
+            const downloadCSV = () => {
+                if (!message.data || !message.data.length) return;
+                const rows = message.data;
+                const headers = Object.keys(rows[0]);
+                const headerLine = headers.join(',');
+
+                const bodyLines = rows.map(row =>
+                    headers
+                        .map(key => {
+                            const raw = row[key] == null ? '' : String(row[key]);
+                            const escaped = raw.replace(/"/g, '""');
+                            return `"${escaped}"`;
+                        })
+                        .join(',')
+                );
+
+                const csv = [headerLine, ...bodyLines].join('\n');
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', 'results.csv');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            };
+
+            return (
+                <div className={`flex gap-4 ${isAI ? 'flex-row' : 'flex-row-reverse'} animate-fade-in`}>
+                    {/* Avatar */}
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border
+                        ${isAI ? 'bg-zinc-900 border-primary/30 text-primary' : 'bg-zinc-800 border-zinc-700 text-zinc-400'}`}>
+                        <span className="material-symbols-outlined text-[18px]">
+                            {isAI ? 'smart_toy' : 'person'}
+                        </span>
+                    </div>
+
+                    <div className={`flex flex-col gap-2 max-w-[85%]`}>
+                        {/* Name Label */}
+                        <span className={`text-[10px] font-bold tracking-widest uppercase ${isAI ? 'text-start ml-1 text-primary' : 'text-end mr-1 text-zinc-500'}`}>
+                            {isAI ? 'SQL Agent' : 'You'}
+                        </span>
+
+                        {/* Content Card */}
+                        <div className={`p-4 rounded-xl border backdrop-blur-sm shadow-lg
+                            ${isAI
+                                ? 'bg-zinc-900/50 border-border rounded-tl-none'
+                                : 'bg-zinc-800/50 border-zinc-700 rounded-tr-none'
+                            }`}>
+
+                            {/* Text Content */}
+                            {message.text && (
+                                <p className="text-sm leading-relaxed text-zinc-200">{message.text}</p>
+                            )}
+
+                            {/* SQL Code Block */}
+                            {message.sql && (
+                                <div className="mt-3 rounded-lg overflow-hidden border border-border bg-[#0d0d0d] node-glow">
+                                    <div className="flex items-center justify-between px-3 py-2 bg-white/5 border-b border-white/5">
+                                        <div className="flex items-center gap-2">
+                                            <span className="w-2 h-2 rounded-full bg-secondary"></span>
+                                            <span className="text-[10px] font-mono text-zinc-400">GENERATED_SQL</span>
+                                        </div>
+                                    </div>
+                                    <pre className="p-4 overflow-x-auto text-sm font-mono text-emerald-400 custom-scrollbar">
+                                        <code>{message.sql}</code>
+                                    </pre>
+                                </div>
+                            )}
+
+                            {/* Results Table with Download */}
+                            {message.data && message.data.length > 0 && (
+                                <div className="mt-4 overflow-hidden rounded-lg border border-border bg-black/40">
+                                    <div className="overflow-x-auto custom-scrollbar">
+                                        <table className="w-full text-left text-xs">
+                                            <thead className="bg-white/5 text-zinc-400 font-mono uppercase border-b border-border">
+                                                <tr>
+                                                    {Object.keys(message.data[0]).map((key) => (
+                                                        <th key={key} className="px-4 py-3 font-medium whitespace-nowrap">{key}</th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-border/50 text-zinc-300">
+                                                {message.data.map((row, i) => (
+                                                    <tr key={i} className="hover:bg-white/5 transition-colors">
+                                                        {Object.values(row).map((val, j) => (
+                                                            <td key={j} className="px-4 py-3 whitespace-nowrap">
+                                                                {val === null ? <span className="text-zinc-600 italic">null</span> : String(val)}
+                                                            </td>
+                                                        ))}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="px-3 py-2 bg-white/5 text-[10px] text-zinc-500 border-t border-border flex justify-between items-center">
+                                        <span>{message.data.length} rows returned</span>
+                                        <button
+                                            type="button"
+                                            onClick={downloadCSV}
+                                            className="flex items-center gap-1 text-emerald-400 hover:text-emerald-300 font-mono"
+                                        >
+                                            <span className="material-symbols-outlined text-[14px]">download</span>
+                                            <span>Download CSV</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Error Message */}
+                            {message.error && (
+                                <div className="mt-3 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-mono">
+                                    Error: {message.error}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // MAIN APP
+        const App = () => {
+            const [schema, setSchema] = useState({});
+            const [input, setInput] = useState("");
+            const [messages, setMessages] = useState([
+                { role: 'ai', text: "Ready to query. I've connected to your PostgreSQL database. What do you need?" }
+            ]);
+            const [loading, setLoading] = useState(false);
+            const messagesEndRef = useRef(null);
+
+            // Fetch Schema on Load
+            useEffect(() => {
+                const fetchSchema = async () => {
+                    try {
+                        const res = await fetch(`${BASE_URL}/schema`);
+                        const data = await res.json();
+                        const raw = data.raw_schema || data;
+                        setSchema(raw || {});
+                    } catch (err) {
+                        console.error("Failed to fetch schema", err);
+                    }
+                };
+                fetchSchema();
+            }, []);
+
+            // Auto-scroll to bottom
+            useEffect(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            }, [messages, loading]);
+
+            const handleSend = async (e) => {
+                e.preventDefault();
+                if (!input.trim()) return;
+
+                const userMsg = input;
+                setInput("");
+                setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
+                setLoading(true);
+
+                try {
+                    const res = await fetch(`${BASE_URL}/generate?question=${encodeURIComponent(userMsg)}`, {
+                        method: 'POST'
+                    });
+                    const data = await res.json();
+
+                    const sql = data.sql || data.generated_sql || null;
+                    const results = data.results || data.data || [];
+                    const error = data.error || null;
+
+                    if (error) {
+                        setMessages(prev => [...prev, {
+                            role: 'ai',
+                            text: "I ran into an issue processing that request.",
+                            sql,
+                            error
+                        }]);
+                    } else {
+                        setMessages(prev => [...prev, {
+                            role: 'ai',
+                            text: sql ? "Here are the results from your database:" : (data.message || "I couldn't generate a SQL query for that."),
+                            sql,
+                            data: results
+                        }]);
+                    }
+
+                } catch (err) {
+                    setMessages(prev => [...prev, { role: 'ai', error: "Failed to connect to backend. Is it running?" }]);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const clearChat = () => {
+                setMessages([
+                    { role: 'ai', text: "Ready to query. I've connected to your PostgreSQL database. What do you need?" }
+                ]);
+            };
+
+
+            return (
+                <div className="flex h-screen w-full overflow-hidden bg-background">
+
+                    {/* LEFT SIDEBAR */}
+                    <aside className="w-72 border-r border-border bg-surface flex flex-col z-20">
+                        {/* Header */}
+                        <div className="p-5 border-b border-border">
+                            <div className="flex items-center gap-2 mb-1">
+                                <div className="h-6 w-6 rounded bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                                    <span className="material-symbols-outlined text-[14px] text-white">database</span>
+                                </div>
+                                <h1 className="font-display font-bold text-lg tracking-tight">SQL Studio</h1>
+                            </div>
+                            <div className="flex items-center gap-2 mt-2">
+                                <span className="relative flex h-2 w-2">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                </span>
+                                <span className="text-[10px] font-mono text-zinc-500 uppercase">PostgreSQL Connected</span>
+                            </div>
+                        </div>
+
+                        {/* Schema List */}
+                        <div className="flex-1 overflow-y-auto custom-scrollbar p-3">
+                            <div className="px-2 py-2 text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">
+                                Tables ({Object.keys(schema).length})
+                            </div>
+                            {Object.entries(schema).map(([table, cols]) => (
+                                <TableItem key={table} tableName={table} columns={cols} />
+                            ))}
+                        </div>
+
+                    </aside>
+
+                    {/* MAIN AREA */}
+                    <main className="flex-1 flex flex-col relative bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-zinc-900 via-background to-background">
+
+                        {/* Header */}
+                        <header className="h-16 border-b border-border/50 glass flex items-center justify-between px-6 sticky top-0 z-10">
+                            <div>
+                                <h2 className="text-sm font-medium text-zinc-400">
+                                    Workflow / <span className="text-white">Natural Language Query</span>
+                                </h2>
+                                <p className="text-[11px] text-zinc-500">Ask your database in plain English.</p>
+                            </div>
+
+                            {/* Clear Chat Button */}
+                            <button
+                                onClick={clearChat}
+                                className="flex items-center gap-2 px-3 py-2 rounded-lg
+                                           bg-white/5 border border-border text-zinc-400
+                                           hover:text-white hover:bg-white/10
+                                           transition-all text-xs font-mono"
+                                title="Clear chat"
+                            >
+                                <span className="material-symbols-outlined text-[16px]">delete_sweep</span>
+                                Clear Chat
+                            </button>
+                        </header>
+
+
+                        {/* Chat Area */}
+                        <div className="flex-1 overflow-y-auto custom-scrollbar p-8 pb-32 space-y-8">
+                            {messages.length === 1 && (
+                                <div className="mt-20 flex flex-col items-center justify-center text-center space-y-4 opacity-50 animate-pulse-slow">
+                                    <span className="material-symbols-outlined text-6xl text-zinc-700">query_stats</span>
+                                    <h3 className="text-2xl font-display font-bold text-zinc-600">No queries yet</h3>
+                                </div>
+                            )}
+
+                            {messages.map((msg, idx) => (
+                                <MessageBubble key={idx} message={msg} />
+                            ))}
+
+                            {loading && (
+                                <div className="flex items-center gap-3 text-zinc-500 text-sm ml-12 animate-pulse">
+                                    <div className="w-2 h-2 rounded-full bg-primary animate-bounce"></div>
+                                    <div className="w-2 h-2 rounded-full bg-secondary animate-bounce delay-75"></div>
+                                    <div className="w-2 h-2 rounded-full bg-accent animate-bounce delay-150"></div>
+                                    <span className="font-mono text-xs">Generating SQL...</span>
+                                </div>
+                            )}
+                            <div ref={messagesEndRef} />
+                        </div>
+
+                        {/* Input Area */}
+                        <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background via-background to-transparent">
+                            <form onSubmit={handleSend} className="max-w-4xl mx-auto relative group">
+                                <div className="absolute -inset-0.5 bg-gradient-to-r from-primary via-secondary to-accent rounded-xl opacity-20 group-focus-within:opacity-50 transition duration-500 blur"></div>
+                                <div className="relative flex items-center bg-[#131315] rounded-xl border border-white/10 shadow-2xl">
+                                    {/* Removed Sparkles Icon */}
+                                    <input
+                                        type="text"
+                                        value={input}
+                                        onChange={(e) => setInput(e.target.value)}
+                                        placeholder="Ask a question about your data (e.g. 'Show me the latest users')..."
+                                        className="w-full bg-transparent border-none py-4 pl-6 pr-16 text-zinc-200 placeholder-zinc-600 focus:ring-0 text-sm font-medium"
+                                    />
+                                    <button
+                                        type="submit"
+                                        disabled={loading || !input.trim()}
+                                        className="absolute right-2 p-2 bg-zinc-800 text-zinc-200 rounded-lg hover:bg-white hover:text-black hover:scale-105 transition-all disabled:opacity-50 disabled:hover:scale-100 disabled:bg-zinc-800 disabled:hover:text-zinc-200"
+                                    >
+                                        <span className="material-symbols-outlined text-[20px]">arrow_upward</span>
+                                    </button>
+                                </div>
+                                <div className="text-center mt-3">
+                                    <p className="text-[10px] text-zinc-600">AI can make mistakes. Please verify generated SQL.</p>
+                                </div>
+                            </form>
+                        </div>
+
+                    </main>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
