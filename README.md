@@ -39,34 +39,29 @@ git clone https://github.com/sujit1661/AI-Based-SQL-Agent.git
 cd AI-Based-SQL-Agent
 
 
+
 2️⃣ Create & Activate Virtual Environment
 python -m venv venv
-
-
 Activate it:
-
 Windows
-
 venv\Scripts\activate
 
-
 Linux / macOS
-
 source venv/bin/activate
+
+
 
 3️⃣ Install Dependencies
 pip install -r requirements.txt
 
 
+
 4️⃣ Configure Environment Variables
-
 Add the following:
-
 Database URL
-
 Groq API Key
-
 (Use .env or environment variables as per your setup)
+
 
 
 5️⃣ Run the Application
