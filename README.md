@@ -1,75 +1,178 @@
-# AI-Based-SQL-Agent
+# AI-Based SQL Agent 🤖🗄️
 
-Natural language–driven SQL query engine built with FastAPI, enabling safe database querying without writing SQL.
+A **Natural Language–driven SQL query engine** built with **FastAPI** that allows users to query databases safely **without writing SQL**.
+
+---
 
 ## 🧠 Overview
 
-AI-Based-SQL-Agent allows users to interact with a relational database using **plain English** instead of SQL.  
-Users can submit natural language questions, and the system generates **schema-aware, SELECT-only SQL queries**, executes them, and returns the results.
+**AI-Based SQL Agent** enables users to interact with a relational database using **plain English**.  
+Instead of manually writing SQL queries, users can ask questions like:
 
-This project is designed to simplify database access and reduce the complexity of writing SQL, especially for **complex joins and nested queries**.
+> *“Show all users who signed up last month”*
+
+The system automatically:
+- Converts natural language into **schema-aware SQL**
+- Ensures **SELECT-only queries** for safety
+- Executes the query
+- Returns the result
+
+This project is ideal for simplifying database access and handling **complex joins or filters** without SQL expertise.
+
+---
 
 ## 💡 Motivation
 
-While working with databases, writing and maintaining complex SQL queries—especially involving joins and conditions—was time-consuming and error-prone.  
-This project was built to eliminate that friction by providing a **natural language interface** for database querying.
+Writing and maintaining complex SQL queries—especially with joins, filters, and nested conditions—can be:
+- Time-consuming  
+- Error-prone  
+- Hard to maintain  
+
+This project was built to remove that friction by introducing a **safe natural language interface** for database querying using an LLM.
+
+---
 
 ## 🚀 Features
 
-- Natural language to SQL conversion  
-- No SQL knowledge required  
-- Generates **SELECT-only** queries for safety  
-- Schema-aware query generation  
-- FastAPI-based REST API  
-- Handles unsupported queries gracefully  
+✅ Natural language → SQL conversion  
+✅ No SQL knowledge required  
+✅ **SELECT-only query enforcement** (safe by design)  
+✅ Schema-aware query generation  
+✅ FastAPI-powered REST API  
+✅ Graceful handling of unsupported queries  
+✅ Simple frontend for testing queries  
+
+---
+
+## 📁 Project Structure
+
+```
+AI-Based-SQL-Agent/
+│
+├── app/
+│   ├── __init__.py
+│   ├── db.py              # Database connection logic
+│   ├── llm.py             # LLM-based SQL generation
+│   ├── schema.py          # Database schema definitions
+│   ├── main.py            # FastAPI application
+│   └── index.html         # Simple frontend UI
+│
+├── .env                   # Environment variables
+├── .gitignore
+├── requirements.txt
+└── README.md
+```
+
+---
 
 ## 🛠 Tech Stack
 
-- Python  
-- FastAPI  
-- PostgreSQL  
-- LLM-based query generation  
-- Uvicorn  
+- **Python**
+- **FastAPI**
+- **PostgreSQL**
+- **LLM (Groq / similar)**
+- **Uvicorn**
+- HTML (basic frontend)
 
+---
 
-⚙️ Installation & Setup
+## ⚙️ Installation & Setup
 
-1️⃣ Clone the Repository
+### 1️⃣ Clone the Repository
+```
 git clone https://github.com/sujit1661/AI-Based-SQL-Agent.git
 cd AI-Based-SQL-Agent
+```
 
+---
 
-
-2️⃣ Create & Activate Virtual Environment
+### 2️⃣ Create & Activate Virtual Environment
+```
 python -m venv venv
-Activate it:
-Windows
+```
+
+**Activate it:**
+
+**Windows**
+```
 venv\Scripts\activate
+```
 
-Linux / macOS
+**Linux / macOS**
+```
 source venv/bin/activate
+```
 
+---
 
-
-3️⃣ Install Dependencies
+### 3️⃣ Install Dependencies
+```
 pip install -r requirements.txt
+```
 
+---
 
+### 4️⃣ Configure Environment Variables
 
-4️⃣ Configure Environment Variables
-Add the following:
-Database URL
-Groq API Key
-(Use .env or environment variables as per your setup)
+Create a `.env` file and add:
 
+```
+DATABASE_URL=your_postgres_connection_string
+GROQ_API_KEY=your_groq_api_key
+```
 
+---
 
-5️⃣ Run the Application
-uvicorn main:app --reload
+### 5️⃣ Run the Application
+```
+uvicorn app.main:app --reload
+```
 
+Server will start at:
+```
+http://127.0.0.1:8000
+```
 
-6️⃣ Open the Frontend
+---
 
-Open index.html in your browser
+### 6️⃣ Open the Frontend
 
-Start querying the database using natural language
+Open `index.html` in your browser  
+Start querying the database using **natural language**.
+
+---
+
+## 📌 Example Queries
+
+- “Show all users”
+- “List orders placed in the last 7 days”
+- “Get total sales grouped by category”
+
+---
+
+## 🔒 Safety Design
+
+- Only **SELECT queries** are generated  
+- INSERT, UPDATE, DELETE, DROP are blocked  
+- Queries validated against schema  
+
+---
+
+## 🚀 Future Enhancements
+
+- Authentication & user sessions
+- Query history
+- Visualization of results
+- Support for multiple databases
+- Role-based access control
+
+---
+
+## 👤 Author
+
+**Sujit**  
+Aspiring Backend / AI Engineer 🚀
+
+---
+
+⭐ If you find this project useful, please give it a star on GitHub!
