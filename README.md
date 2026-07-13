@@ -1,63 +1,61 @@
-# AI-Based SQL Agent 🤖🗄️
+# 🤖 AI-Based SQL Agent
 
-A **Natural Language–driven SQL query engine** built with **FastAPI** that allows users to query databases safely **without writing SQL**.
+> A Natural Language to SQL engine built with **FastAPI** that allows users to query databases using plain English—without writing SQL.
+
+![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python)
+![FastAPI](https://img.shields.io/badge/FastAPI-Framework-009688?logo=fastapi)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-336791?logo=postgresql)
+![License](https://img.shields.io/badge/License-MIT-green)
 
 ---
 
-## 🧠 Overview
+## 📖 Overview
 
-**AI-Based SQL Agent** enables users to interact with a relational database using **plain English**.  
-Instead of manually writing SQL queries, users can ask questions like:
+AI-Based SQL Agent enables users to interact with a relational database using **natural language**.
 
-> *“Show all users who signed up last month”*
+Instead of writing SQL queries manually, users can simply ask questions such as:
 
-The system automatically:
-- Converts natural language into **schema-aware SQL**
-- Ensures **SELECT-only queries** for safety
+> **"Show all users who signed up last month."**
+
+The application automatically:
+
+- Converts natural language into SQL
+- Understands the database schema
+- Generates safe **SELECT-only** queries
 - Executes the query
-- Returns the result
+- Returns the results instantly
 
-This project is ideal for simplifying database access and handling **complex joins or filters** without SQL expertise.
-
----
-
-## 💡 Motivation
-
-Writing and maintaining complex SQL queries—especially with joins, filters, and nested conditions—can be:
-- Time-consuming  
-- Error-prone  
-- Hard to maintain  
-
-This project was built to remove that friction by introducing a **safe natural language interface** for database querying using an LLM.
+This makes database interaction faster, safer, and more accessible for users who are not familiar with SQL.
 
 ---
 
-## 🚀 Features
+## ✨ Features
 
-✅ Natural language → SQL conversion  
-✅ No SQL knowledge required  
-✅ **SELECT-only query enforcement** (safe by design)  
-✅ Schema-aware query generation  
-✅ FastAPI-powered REST API  
-✅ Graceful handling of unsupported queries  
-✅ Simple frontend for testing queries  
+- 🔹 Natural Language → SQL conversion
+- 🔹 Schema-aware SQL generation
+- 🔹 Secure **SELECT-only** query execution
+- 🔹 FastAPI REST API
+- 🔹 PostgreSQL integration
+- 🔹 Graceful handling of unsupported queries
+- 🔹 Simple HTML frontend for testing
+- 🔹 Easy to configure and extend
 
 ---
 
-## 📁 Project Structure
+## 🏗️ Project Structure
 
-```
+```text
 AI-Based-SQL-Agent/
 │
 ├── app/
 │   ├── __init__.py
-│   ├── db.py              # Database connection logic
-│   ├── llm.py             # LLM-based SQL generation
-│   ├── schema.py          # Database schema definitions
+│   ├── db.py              # Database connection
+│   ├── llm.py             # LLM prompt & SQL generation
+│   ├── schema.py          # Database schema
 │   ├── main.py            # FastAPI application
-│   └── index.html         # Simple frontend UI
+│   └── index.html         # Frontend
 │
-├── .env                   # Environment variables
+├── .env
 ├── .gitignore
 ├── requirements.txt
 └── README.md
@@ -65,114 +63,145 @@ AI-Based-SQL-Agent/
 
 ---
 
-## 🛠 Tech Stack
+## 🛠️ Tech Stack
 
-- **Python**
-- **FastAPI**
-- **PostgreSQL**
-- **LLM (Groq / similar)**
-- **Uvicorn**
-- HTML (basic frontend)
+| Technology | Purpose |
+|------------|---------|
+| Python | Backend Development |
+| FastAPI | REST API |
+| PostgreSQL | Database |
+| Groq API / LLM | Natural Language to SQL |
+| Uvicorn | ASGI Server |
+| HTML | Simple Frontend |
 
 ---
 
-## ⚙️ Installation & Setup
+## ⚙️ Getting Started
 
-### 1️⃣ Clone the Repository
-```
+### 1. Clone the Repository
+
+```bash
 git clone https://github.com/sujit1661/AI-Based-SQL-Agent.git
 cd AI-Based-SQL-Agent
 ```
 
 ---
 
-### 2️⃣ Create & Activate Virtual Environment
-```
+### 2. Create Virtual Environment
+
+```bash
 python -m venv venv
 ```
 
-**Activate it:**
+### Activate Environment
 
 **Windows**
-```
+
+```bash
 venv\Scripts\activate
 ```
 
 **Linux / macOS**
-```
+
+```bash
 source venv/bin/activate
 ```
 
 ---
 
-### 3️⃣ Install Dependencies
-```
+### 3. Install Dependencies
+
+```bash
 pip install -r requirements.txt
 ```
 
 ---
 
-### 4️⃣ Configure Environment Variables
+### 4. Configure Environment Variables
 
-Create a `.env` file and add:
+Create a `.env` file in the project root.
 
-```
-DATABASE_URL=your_postgres_connection_string
+```env
+DATABASE_URL=your_postgresql_connection_string
 GROQ_API_KEY=your_groq_api_key
 ```
 
 ---
 
-### 5️⃣ Run the Application
-```
+### 5. Run the Application
+
+```bash
 uvicorn app.main:app --reload
 ```
 
-Server will start at:
+Server will be available at:
+
 ```
 http://127.0.0.1:8000
 ```
 
 ---
 
-### 6️⃣ Open the Frontend
+### 6. Open the Frontend
 
-Open `index.html` in your browser  
-Start querying the database using **natural language**.
-
----
-
-## 📌 Example Queries
-
-- “Show all users”
-- “List orders placed in the last 7 days”
-- “Get total sales grouped by category”
+Open the `index.html` file in your browser and start querying your database using natural language.
 
 ---
 
-## 🔒 Safety Design
+## 💬 Example Queries
 
-- Only **SELECT queries** are generated  
-- INSERT, UPDATE, DELETE, DROP are blocked  
-- Queries validated against schema  
+Try asking questions like:
 
----
-
-## 🚀 Future Enhancements
-
-- Authentication & user sessions
-- Query history
-- Visualization of results
-- Support for multiple databases
-- Role-based access control
+- Show all users
+- Display all employees from the HR department
+- List orders placed in the last 7 days
+- Show products with price greater than 1000
+- Get total sales grouped by category
+- Find customers from Pune
 
 ---
 
-## 👤 Author
+## 🔒 Safety
 
-**Sujit**  
-Aspiring Backend / AI Engineer 🚀
+This project is designed with safety in mind.
+
+- ✅ Only **SELECT** statements are allowed
+- ✅ INSERT, UPDATE, DELETE, DROP, ALTER, and TRUNCATE are blocked
+- ✅ Queries are validated before execution
+- ✅ Schema-aware SQL generation minimizes invalid queries
 
 ---
 
-⭐ If you find this project useful, please give it a star on GitHub!
+## 🚀 Future Improvements
+
+- User Authentication
+- Query History
+- Result Visualization
+- Multi-Database Support
+- Role-Based Access Control (RBAC)
+- Conversation Memory
+- Query Optimization
+
+---
+
+## 👨‍💻 Author
+
+**Sujit Sadalage**
+
+Aspiring **AI Engineer | Backend Developer | Python Developer**
+
+- GitHub: https://github.com/sujit1661
+
+---
+
+## ⭐ Support
+
+If you found this project helpful, consider giving it a **⭐ Star** on GitHub.
+
+It helps others discover the project and motivates future improvements.
+
+---
+
+## 📄 License
+
+This project is intended for learning and educational purposes. Feel free to fork, modify, and build upon it.
