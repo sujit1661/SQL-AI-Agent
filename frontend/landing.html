@@ -1,0 +1,1085 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SQL Studio AI — Query your database in plain English</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&family=Space+Grotesk:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── Reset & Base ─────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; scroll-behavior: smooth; }
+    body {
+      background: #000;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── Scrollbar ────────────────────────────────── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: #000; }
+    ::-webkit-scrollbar-thumb { background: #222; border-radius: 2px; }
+
+    /* ─── Variables ────────────────────────────────── */
+    :root {
+      --purple: #a855f7;
+      --pink:   #ec4899;
+      --cyan:   #06b6d4;
+      --dim:    rgba(255,255,255,0.035);
+      --border: rgba(255,255,255,0.07);
+    }
+
+    /* ══════════════════════════════════════════════════
+       LAYOUT SHELL
+    ══════════════════════════════════════════════════ */
+    .page { position: relative; z-index: 1; }
+
+    /* ─── Navigation ───────────────────────────────── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    @media (max-width: 640px) { nav { padding: 16px 20px; } }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+    .nav-logo-icon {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, var(--purple), var(--pink));
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .nav-logo-name {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600;
+      font-size: 15px;
+      letter-spacing: -0.02em;
+      color: #fff;
+    }
+    .nav-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      color: rgba(255,255,255,0.3);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 3px;
+      padding: 2px 5px;
+      letter-spacing: 0.06em;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+    }
+    .nav-links a {
+      font-size: 13px;
+      color: rgba(255,255,255,0.45);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: #fff; }
+    .nav-cta {
+      font-size: 13px;
+      font-weight: 500;
+      color: #fff;
+      text-decoration: none;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 8px 16px;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .nav-cta:hover {
+      background: rgba(255,255,255,0.12);
+      border-color: rgba(255,255,255,0.2);
+    }
+    @media (max-width: 640px) {
+      .nav-links a:not(.nav-cta) { display: none; }
+    }
+
+    /* ─── Hero Section ─────────────────────────────── */
+    .hero {
+      min-height: 100svh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+      position: relative;
+    }
+
+    /* Pill above headline */
+    .hero-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 100px;
+      padding: 6px 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: rgba(255,255,255,0.45);
+      letter-spacing: 0.05em;
+      margin-bottom: 40px;
+      opacity: 0;
+      animation: fade-up 0.6s cubic-bezier(0.16,1,0.3,1) 0.1s forwards;
+    }
+    .hero-pill-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #22c55e;
+      animation: pulse-dot 2s ease infinite;
+    }
+    @keyframes pulse-dot {
+      0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(34,197,94,0.4); }
+      50% { opacity: 0.7; box-shadow: 0 0 0 4px rgba(34,197,94,0); }
+    }
+
+    /* Giant headline — browser-use style mixed weight */
+    .hero-headline {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(52px, 8vw, 110px);
+      line-height: 0.95;
+      letter-spacing: -0.04em;
+      margin-bottom: 28px;
+      max-width: 900px;
+    }
+    .hero-headline .line-dim {
+      display: block;
+      font-weight: 300;
+      color: rgba(255,255,255,0.28);
+      opacity: 0;
+      animation: fade-up 0.7s cubic-bezier(0.16,1,0.3,1) 0.2s forwards;
+    }
+    .hero-headline .line-bright {
+      display: block;
+      font-weight: 700;
+      color: #fff;
+      opacity: 0;
+      animation: fade-up 0.7s cubic-bezier(0.16,1,0.3,1) 0.32s forwards;
+    }
+    .hero-headline .line-accent {
+      display: block;
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--purple) 0%, var(--pink) 55%, var(--cyan) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      opacity: 0;
+      animation: fade-up 0.7s cubic-bezier(0.16,1,0.3,1) 0.44s forwards;
+    }
+
+    .hero-sub {
+      font-size: clamp(14px, 1.8vw, 18px);
+      color: rgba(255,255,255,0.38);
+      line-height: 1.65;
+      max-width: 520px;
+      margin-bottom: 44px;
+      opacity: 0;
+      animation: fade-up 0.7s cubic-bezier(0.16,1,0.3,1) 0.54s forwards;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      opacity: 0;
+      animation: fade-up 0.7s cubic-bezier(0.16,1,0.3,1) 0.64s forwards;
+    }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 13px 26px;
+      border-radius: 10px;
+      background: #fff;
+      color: #000;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      text-decoration: none;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn-primary svg { transition: transform 0.2s; }
+    .btn-primary:hover svg { transform: translateX(2px); }
+
+    .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 13px 26px;
+      border-radius: 10px;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.55);
+      font-size: 14px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: border-color 0.2s, color 0.2s, transform 0.2s;
+    }
+    .btn-ghost:hover {
+      border-color: rgba(255,255,255,0.28);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    /* ─── Stat strip ───────────────────────────────── */
+    .hero-stats {
+      display: flex;
+      gap: 48px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 64px;
+      padding-top: 40px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      opacity: 0;
+      animation: fade-up 0.7s cubic-bezier(0.16,1,0.3,1) 0.74s forwards;
+    }
+    .stat-item { text-align: center; }
+    .stat-value {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 22px;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: -0.03em;
+    }
+    .stat-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: rgba(255,255,255,0.25);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-top: 3px;
+    }
+
+    /* ─── Marquee strip ────────────────────────────── */
+    .marquee-section {
+      position: relative;
+      padding: 0;
+      overflow: hidden;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .marquee-section::before,
+    .marquee-section::after {
+      content: '';
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 120px;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .marquee-section::before { left: 0; background: linear-gradient(to right, #000, transparent); }
+    .marquee-section::after  { right: 0; background: linear-gradient(to left, #000, transparent); }
+
+    .marquee-track {
+      display: flex;
+      width: max-content;
+      animation: marquee-scroll 28s linear infinite;
+      padding: 20px 0;
+    }
+    @keyframes marquee-scroll {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+    .marquee-item {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.22);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0 32px;
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      white-space: nowrap;
+    }
+    .marquee-item::after {
+      content: '·';
+      color: rgba(255,255,255,0.1);
+    }
+
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── Section shared ───────────────────────────── */
+    .section {
+      position: relative;
+      padding: 120px 40px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    @media (max-width: 768px) { .section { padding: 80px 20px; } }
+
+    .section-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.22);
+      margin-bottom: 20px;
+    }
+    .section-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(28px, 4vw, 48px);
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      color: #fff;
+      margin-bottom: 64px;
+    }
+    .section-title span {
+      color: rgba(255,255,255,0.28);
+      font-weight: 300;
+    }
+
+    /* ─── How it works — pipeline ──────────────────── */
+    .pipeline {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .pipeline-step {
+      display: grid;
+      grid-template-columns: 56px 1fr;
+      gap: 24px;
+      position: relative;
+    }
+    .step-rail {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 2px;
+    }
+    .step-num {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.3);
+      flex-shrink: 0;
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+    }
+    .pipeline-step:hover .step-num {
+      border-color: rgba(168,85,247,0.4);
+      color: var(--purple);
+      background: rgba(168,85,247,0.06);
+    }
+    .step-line {
+      width: 1px;
+      flex: 1;
+      background: rgba(255,255,255,0.05);
+      margin-top: 8px;
+    }
+    .pipeline-step:last-child .step-line { display: none; }
+    .step-body {
+      padding-bottom: 56px;
+    }
+    .pipeline-step:last-child .step-body { padding-bottom: 0; }
+    .step-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+    .step-desc {
+      font-size: 14px;
+      color: rgba(255,255,255,0.38);
+      line-height: 1.7;
+      max-width: 560px;
+      margin-bottom: 16px;
+    }
+    .tag-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: rgba(255,255,255,0.3);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 4px;
+      padding: 3px 8px;
+      letter-spacing: 0.04em;
+    }
+    .tag-green {
+      color: rgba(34,197,94,0.7);
+      border-color: rgba(34,197,94,0.15);
+      background: rgba(34,197,94,0.04);
+    }
+
+    /* ─── Capabilities — 2-col grid ────────────────── */
+    .cap-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    @media (max-width: 640px) { .cap-grid { grid-template-columns: 1fr; } }
+    .cap-cell {
+      background: #000;
+      padding: 28px 28px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      transition: background 0.2s;
+    }
+    .cap-cell:hover { background: rgba(255,255,255,0.018); }
+    .cap-icon {
+      width: 32px; height: 32px;
+      border-radius: 7px;
+      border: 1px solid rgba(255,255,255,0.07);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .cap-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.85);
+      margin-bottom: 5px;
+      letter-spacing: -0.01em;
+    }
+    .cap-desc {
+      font-size: 12px;
+      color: rgba(255,255,255,0.3);
+      line-height: 1.65;
+    }
+
+    /* ─── Tech strip ───────────────────────────────── */
+    .tech-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+    .tech-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: rgba(255,255,255,0.28);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 5px;
+      padding: 5px 12px;
+      letter-spacing: 0.04em;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .tech-pill:hover {
+      color: rgba(255,255,255,0.7);
+      border-color: rgba(255,255,255,0.15);
+    }
+
+    /* ─── CTA block ────────────────────────────────── */
+    .cta-block {
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 20px;
+      padding: 72px 56px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-block::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(168,85,247,0.07) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    @media (max-width: 640px) { .cta-block { padding: 48px 24px; } }
+    .cta-heading {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(28px, 5vw, 52px);
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      color: #fff;
+      margin-bottom: 16px;
+    }
+    .cta-heading span { color: rgba(255,255,255,0.25); font-weight: 300; }
+    .cta-sub {
+      font-size: 14px;
+      color: rgba(255,255,255,0.32);
+      margin-bottom: 36px;
+      line-height: 1.6;
+    }
+    .cta-note {
+      margin-top: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: rgba(255,255,255,0.18);
+      letter-spacing: 0.05em;
+    }
+
+    /* ─── Footer ───────────────────────────────────── */
+    footer {
+      border-top: 1px solid rgba(255,255,255,0.05);
+      padding: 32px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    @media (max-width: 640px) { footer { padding: 24px 20px; } }
+    .footer-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+    .footer-copy {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: rgba(255,255,255,0.15);
+      letter-spacing: 0.03em;
+    }
+    .footer-warn {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: rgba(255,255,255,0.12);
+      letter-spacing: 0.03em;
+    }
+
+    /* ─── Divider ───────────────────────────────────── */
+    .hr {
+      border: none;
+      height: 1px;
+      background: rgba(255,255,255,0.05);
+      margin: 0;
+    }
+
+    /* ─── Intersection Observer fade-in ─────────────── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.7s cubic-bezier(0.16,1,0.3,1), transform 0.7s cubic-bezier(0.16,1,0.3,1);
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+
+    /* ─── Instrument Serif accents ───────────────────── */
+    .serif-accent {
+      font-family: 'Instrument Serif', serif;
+      font-style: italic;
+      font-weight: 400;
+    }
+    /* Used inside section titles for contrast against Space Grotesk */
+    .section-title .serif {
+      font-family: 'Instrument Serif', serif;
+      font-style: italic;
+      font-weight: 400;
+      color: rgba(255,255,255,0.55);
+      letter-spacing: 0;
+    }
+
+    /* ─── Stat counter animation ─────────────────────── */
+    .stat-value { display: inline-block; }
+    @keyframes count-up {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .hero-stats.visible .stat-item:nth-child(1) .stat-value { animation: count-up 0.5s 0.0s both; }
+    .hero-stats.visible .stat-item:nth-child(2) .stat-value { animation: count-up 0.5s 0.1s both; }
+    .hero-stats.visible .stat-item:nth-child(3) .stat-value { animation: count-up 0.5s 0.2s both; }
+    .hero-stats.visible .stat-item:nth-child(4) .stat-value { animation: count-up 0.5s 0.3s both; }
+
+    /* ─── Scroll-reveal variants ─────────────────────── */
+    .reveal-left {
+      opacity: 0;
+      transform: translateX(-28px);
+      transition: opacity 0.75s cubic-bezier(0.16,1,0.3,1), transform 0.75s cubic-bezier(0.16,1,0.3,1);
+    }
+    .reveal-left.visible { opacity: 1; transform: translateX(0); }
+
+    .reveal-right {
+      opacity: 0;
+      transform: translateX(28px);
+      transition: opacity 0.75s cubic-bezier(0.16,1,0.3,1), transform 0.75s cubic-bezier(0.16,1,0.3,1);
+    }
+    .reveal-right.visible { opacity: 1; transform: translateX(0); }
+
+    .reveal-scale {
+      opacity: 0;
+      transform: scale(0.96);
+      transition: opacity 0.7s cubic-bezier(0.16,1,0.3,1), transform 0.7s cubic-bezier(0.16,1,0.3,1);
+    }
+    .reveal-scale.visible { opacity: 1; transform: scale(1); }
+
+    /* Pipeline step — slide in from left with stagger */
+    .pipeline-step.reveal-left { transition-delay: 0s; }
+    .pipeline-step:nth-child(2).reveal-left { transition-delay: 0.12s; }
+    .pipeline-step:nth-child(3).reveal-left { transition-delay: 0.24s; }
+
+    /* Cap-cell hover glow */
+    .cap-cell {
+      position: relative;
+      overflow: hidden;
+    }
+    .cap-cell::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 60% 60% at 0% 100%, rgba(168,85,247,0.06), transparent);
+      opacity: 0;
+      transition: opacity 0.4s;
+      pointer-events: none;
+    }
+    .cap-cell:hover::after { opacity: 1; }
+
+    /* Marquee pause on hover */
+    .marquee-section:hover .marquee-track { animation-play-state: paused; }
+
+
+
+    /* ─── Global font weight bump ────────────────────── */
+    body { font-weight: 400; }
+    .hero-sub {
+      font-weight: 400;
+      color: rgba(255,255,255,0.5);
+    }
+    .step-desc { font-weight: 400; color: rgba(255,255,255,0.48); }
+    .cap-desc  { font-weight: 400; color: rgba(255,255,255,0.42); }
+    .cap-name  { font-weight: 600; color: rgba(255,255,255,0.92); }
+    .step-title { font-weight: 700; }
+    .section-label { font-weight: 500; color: rgba(255,255,255,0.3); }
+    .stat-label { color: rgba(255,255,255,0.35); font-weight: 500; }
+    .nav-links a { font-weight: 500; color: rgba(255,255,255,0.55); }
+    .footer-copy { color: rgba(255,255,255,0.25); }
+    .footer-warn { color: rgba(255,255,255,0.18); }
+
+    /* ─── Background ────────────────────────────────────── */
+    #bg-light {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+      background: #000;
+    }
+
+    /* Single diagonal line — bottom-left to top-right */
+    #diag-line {
+      position: absolute;
+      width: 1px;
+      height: 160vh;
+      bottom: -10vh;
+      left: 8vw;
+      transform-origin: bottom center;
+      transform: rotate(-42deg);
+      background: linear-gradient(
+        to top,
+        transparent 0%,
+        rgba(255,255,255,0.55) 50%,
+        transparent 100%
+      );
+      animation: line-travel 8s linear infinite;
+      will-change: transform;
+    }
+    @keyframes line-travel {
+      0%   { transform: rotate(-42deg) translateY(0);      opacity: 0; }
+      6%   { opacity: 1; }
+      94%  { opacity: 1; }
+      100% { transform: rotate(-42deg) translateY(-160vh); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════
+     LIGHT BACKGROUND
+════════════════════════════════════════════════════ -->
+<div id="bg-light" aria-hidden="true"><div id="diag-line"></div></div>
+
+<!-- ══════════════════════════════════════════════════
+     PAGE CONTENT
+════════════════════════════════════════════════════ -->
+<div class="page">
+
+<!-- ── NAV ───────────────────────────────────────── -->
+<nav aria-label="Main navigation">
+  <a href="#" class="nav-logo" aria-label="SQL Studio AI home">
+    <div class="nav-logo-icon">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+        <path d="M2 4h10M2 7h7M2 10h5" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <span class="nav-logo-name">SQL Studio</span>
+    <span class="nav-badge">AI</span>
+  </a>
+  <div class="nav-links">
+    <a href="#how-it-works">How it works</a>
+    <a href="#capabilities">Capabilities</a>
+    <a href="/profile">About</a>
+    <a href="/app" class="nav-cta" aria-label="Open SQL Studio application">Open Studio →</a>
+  </div>
+</nav>
+
+<!-- ── HERO ──────────────────────────────────────── -->
+<section class="hero" aria-label="Hero">
+  <div class="hero-pill" role="status">
+    <span class="hero-pill-dot" aria-hidden="true"></span>
+    PostgreSQL × LLM · Groq-powered
+  </div>
+
+  <h1 class="hero-headline">
+    <span class="line-dim">THE WAY YOU</span>
+    <span class="line-bright">QUERY YOUR</span>
+    <span class="line-accent">DATABASE.</span>
+  </h1>
+
+  <p class="hero-sub">
+    Type a question in plain English.<br>
+    Get SQL. Get results. No schema memorization,<br>
+    no syntax errors. Just your data — instantly.
+  </p>
+
+  <div class="hero-actions">
+    <a href="/app" class="btn-primary" aria-label="Launch SQL Studio">
+      <span>Open Studio</span>
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+        <path d="M2 7h10M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
+    <a href="#how-it-works" class="btn-ghost">How it works</a>
+  </div>
+
+  <div class="hero-stats" role="list" aria-label="Key stats">
+    <div class="stat-item" role="listitem">
+      <div class="stat-value">~200ms</div>
+      <div class="stat-label">avg query time</div>
+    </div>
+    <div class="stat-item" role="listitem">
+      <div class="stat-value">llama-3.1</div>
+      <div class="stat-label">on Groq</div>
+    </div>
+    <div class="stat-item" role="listitem">
+      <div class="stat-value">SELECT-only</div>
+      <div class="stat-label">read-safe</div>
+    </div>
+    <div class="stat-item" role="listitem">
+      <div class="stat-value">live schema</div>
+      <div class="stat-label">always in sync</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── MARQUEE — tech stack ticker ───────────────── -->
+<div class="marquee-section" aria-hidden="true">
+  <div class="marquee-track" id="marqueeTrack">
+    <!-- items injected by JS for clean duplication -->
+  </div>
+</div>
+
+<hr class="hr" />
+
+<!-- ── HOW IT WORKS ───────────────────────────────── -->
+<section id="how-it-works" aria-labelledby="how-heading">
+  <div class="section">
+    <div class="reveal">
+      <div class="section-label">The pipeline</div>
+      <div class="section-title">
+        Three steps.<br><span class="serif">Zero SQL required.</span>
+      </div>
+    </div>
+
+    <ol class="pipeline" aria-label="How SQL Studio works">
+
+      <li class="pipeline-step reveal-left">
+        <div class="step-rail" aria-hidden="true">
+          <div class="step-num">01</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="step-body">
+          <h3 class="step-title">Ask in plain English</h3>
+          <p class="step-desc">
+            Type your question exactly as you'd say it out loud.
+            "Which products had the most returns last month?" is a perfectly valid query.
+          </p>
+          <div class="tag-row">
+            <span class="tag">"Show me users who never placed an order"</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="pipeline-step reveal-left">
+        <div class="step-rail" aria-hidden="true">
+          <div class="step-num">02</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="step-body">
+          <h3 class="step-title">Schema-aware SQL generation</h3>
+          <p class="step-desc">
+            The LLM receives your live schema — real table names, real column types —
+            so it writes valid SQL with no hallucinated column names.
+          </p>
+          <div class="tag-row">
+            <span class="tag">llama-3.1-8b-instant</span>
+            <span class="tag">Groq inference</span>
+            <span class="tag">temp=0.1</span>
+          </div>
+        </div>
+      </li>
+
+      <li class="pipeline-step reveal-left">
+        <div class="step-rail" aria-hidden="true">
+          <div class="step-num">03</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="step-body">
+          <h3 class="step-title">Safe execution &amp; results</h3>
+          <p class="step-desc">
+            Only <code style="font-family:'JetBrains Mono',monospace;color:rgba(6,182,212,0.8);font-size:12px;">SELECT</code>
+            queries run against your database. Results render as a table — exportable to CSV in one click.
+          </p>
+          <div class="tag-row">
+            <span class="tag tag-green">SELECT-only guard</span>
+            <span class="tag">CSV export</span>
+            <span class="tag">live row count</span>
+          </div>
+        </div>
+      </li>
+
+    </ol>
+  </div>
+</section>
+
+<hr class="hr" />
+
+<!-- ── CAPABILITIES ───────────────────────────────── -->
+<section id="capabilities" aria-labelledby="cap-heading">
+  <div class="section">
+    <div class="reveal">
+      <div class="section-label">What it handles</div>
+      <h2 id="cap-heading" class="section-title">Capabilities</h2>
+    </div>
+
+    <div class="cap-grid reveal-scale" role="list">
+
+      <div class="cap-cell" role="listitem">
+        <div class="cap-icon" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 2l5 5-5 5" stroke="rgba(168,85,247,0.7)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div>
+          <div class="cap-name">Multi-table joins</div>
+          <div class="cap-desc">Handles questions spanning multiple tables without you naming the join condition.</div>
+        </div>
+      </div>
+
+      <div class="cap-cell" role="listitem">
+        <div class="cap-icon" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="2" y="4" width="10" height="7" rx="1" stroke="rgba(236,72,153,0.7)" stroke-width="1.5"/><path d="M5 4V3a2 2 0 0 1 4 0v1" stroke="rgba(236,72,153,0.7)" stroke-width="1.5"/></svg>
+        </div>
+        <div>
+          <div class="cap-name">Aggregations &amp; grouping</div>
+          <div class="cap-desc">SUM, COUNT, AVG, GROUP BY — expressed naturally like "total by category".</div>
+        </div>
+      </div>
+
+      <div class="cap-cell" role="listitem">
+        <div class="cap-icon" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5" stroke="rgba(6,182,212,0.7)" stroke-width="1.5"/><path d="M7 4v3l2 1" stroke="rgba(6,182,212,0.7)" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <div>
+          <div class="cap-name">Date &amp; time reasoning</div>
+          <div class="cap-desc">"Last 30 days", "this quarter", "since January" resolve into correct PostgreSQL date functions.</div>
+        </div>
+      </div>
+
+      <div class="cap-cell" role="listitem">
+        <div class="cap-icon" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 4h10M2 7h6M2 10h4" stroke="rgba(34,197,94,0.7)" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <div>
+          <div class="cap-name">Live schema sidebar</div>
+          <div class="cap-desc">Every table and column fetched at runtime — always synced with your actual database.</div>
+        </div>
+      </div>
+
+      <div class="cap-cell" role="listitem">
+        <div class="cap-icon" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 2h8v10H3z" stroke="rgba(251,191,36,0.7)" stroke-width="1.5" stroke-linejoin="round"/><path d="M5 5h4M5 8h2" stroke="rgba(251,191,36,0.7)" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <div>
+          <div class="cap-name">Visible generated SQL</div>
+          <div class="cap-desc">You always see the exact query that ran. No black box — copy, verify, or adapt it yourself.</div>
+        </div>
+      </div>
+
+      <div class="cap-cell" role="listitem">
+        <div class="cap-icon" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v2M7 10v2M2 7h2M10 7h2" stroke="rgba(244,63,94,0.7)" stroke-width="1.5" stroke-linecap="round"/><circle cx="7" cy="7" r="2" stroke="rgba(244,63,94,0.7)" stroke-width="1.5"/></svg>
+        </div>
+        <div>
+          <div class="cap-name">Read-only safety guard</div>
+          <div class="cap-desc">Backend enforces SELECT-only. No INSERT, UPDATE, or DELETE — even if the LLM tries.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<hr class="hr" />
+
+<!-- ── TECH STACK ─────────────────────────────────── -->
+<section aria-labelledby="stack-heading">
+  <div class="section" style="padding-top:80px;padding-bottom:80px;">
+    <div class="reveal">
+      <div class="section-label">Under the hood</div>
+      <div class="tech-strip" role="list" aria-labelledby="stack-heading">
+        <span class="sr-only" id="stack-heading">Technology stack</span>
+        <span class="tech-pill" role="listitem">FastAPI</span>
+        <span class="tech-pill" role="listitem">PostgreSQL</span>
+        <span class="tech-pill" role="listitem">SQLModel</span>
+        <span class="tech-pill" role="listitem">Groq</span>
+        <span class="tech-pill" role="listitem">llama-3.1-8b-instant</span>
+        <span class="tech-pill" role="listitem">React 18</span>
+        <span class="tech-pill" role="listitem">Tailwind CSS</span>
+        <span class="tech-pill" role="listitem">Python 3.11</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="hr" />
+
+<!-- ── CTA ────────────────────────────────────────── -->
+<section aria-label="Call to action">
+  <div class="section">
+    <div class="cta-block reveal">
+      <h2 class="cta-heading">
+        Your database is<br><span class="serif-accent">one question away.</span>
+      </h2>
+      <p class="cta-sub">
+        Make sure your backend is running on localhost:8000,<br>
+        then open the studio and start asking.
+      </p>
+      <a href="/app" class="btn-primary" style="display:inline-flex;" aria-label="Launch SQL Studio">
+        <span>Open Studio</span>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+          <path d="M2 7h10M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+      <p class="cta-note">requires backend on localhost:8000</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ─────────────────────────────────────── -->
+<footer role="contentinfo">
+  <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+    <a href="/" class="footer-brand" aria-label="SQL Studio AI home">
+      <div class="nav-logo-icon" style="width:20px;height:20px;" aria-hidden="true">
+        <svg width="10" height="10" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+          <path d="M2 4h10M2 7h7M2 10h5" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <span class="footer-copy">SQL Studio AI</span>
+    </a>
+    <span class="footer-copy" style="color:rgba(255,255,255,0.08);">·</span>
+    <span class="footer-copy">Built by <a href="/profile" style="color:rgba(255,255,255,0.35);text-decoration:none;transition:color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.35)'">Sujit Sadalage</a></span>
+    <span class="footer-copy" style="color:rgba(255,255,255,0.08);">·</span>
+    <span class="footer-copy" style="color:rgba(255,255,255,0.12);">© 2026</span>
+  </div>
+  <span class="footer-warn">Always verify generated SQL before production use.</span>
+</footer>
+
+</div><!-- end .page -->
+
+</div><!-- end .page -->
+
+<script>
+/* ── Subtle parallax: bg drifts at 6% of scroll ── */
+(function () {
+  const bg = document.getElementById('bg-light');
+  if (!bg) return;
+  let ticking = false;
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      requestAnimationFrame(() => {
+        bg.style.transform = `translateY(${window.scrollY * 0.06}px)`;
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }, { passive: true });
+})();
+
+/* ═══════════════════════════════════════════════════
+   MARQUEE
+═══════════════════════════════════════════════════ */
+(function () {
+  const items = [
+    'FastAPI', 'PostgreSQL', 'Groq', 'llama-3.1', 'SQLModel',
+    'Natural Language → SQL', 'SELECT-only', 'React 18',
+    'Live Schema', 'CSV Export', 'Python 3.11',
+    'Space Grotesk', 'Instrument Serif', 'No syntax errors',
+  ];
+  const track = document.getElementById('marqueeTrack');
+  if (!track) return;
+  [...items, ...items].forEach(label => {
+    const el = document.createElement('span');
+    el.className = 'marquee-item';
+    el.textContent = label;
+    track.appendChild(el);
+  });
+})();
+
+/* ═══════════════════════════════════════════════════
+   SCROLL REVEAL — all variants
+═══════════════════════════════════════════════════ */
+(function () {
+  const els = document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale');
+  const observer = new IntersectionObserver(
+    entries => entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
+    }),
+    { threshold: 0.10, rootMargin: '0px 0px -30px 0px' }
+  );
+  els.forEach(el => observer.observe(el));
+})();
+
+/* ═══════════════════════════════════════════════════
+   HERO STATS entrance
+═══════════════════════════════════════════════════ */
+(function () {
+  const stats = document.querySelector('.hero-stats');
+  if (!stats) return;
+  const obs = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) { stats.classList.add('visible'); obs.disconnect(); }
+  }, { threshold: 0.5 });
+  obs.observe(stats);
+})();
+</script>
+
+</body>
+</html>

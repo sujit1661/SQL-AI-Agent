@@ -1,5 +1,8 @@
 fastapi
-uvicorn
+uvicorn[standard]
+sqlmodel
 sqlalchemy
 psycopg2-binary
 python-dotenv
+groq
+aiofiles

@@ -1,28 +1,49 @@
+import os
+from pathlib import Path
+
 from fastapi import FastAPI, Depends
-from fastapi.middleware.cors import CORSMiddleware  # <--- 1. IMPORT THIS
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from sqlmodel import Session, text
 
 from db import get_session
 from schema import get_db_schema, format_schema_for_llm
 from llm import generate_sql
 
+# Resolve the frontend directory relative to this file
+FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
+
 app = FastAPI()
 
-# <--- 2. ADD THIS BLOCK --->
-# This allows your frontend (running in the browser) to talk to this backend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all connections (Safety for local dev)
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],  # Allows GET, POST, etc.
-    allow_headers=["*"],  # Allows all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
+# Serve all files inside frontend/ as static assets (CSS, JS, images, etc.)
+app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
 
 
-@app.get("/")
-def health():
-    return {"status": "alive"}
+@app.get("/", include_in_schema=False)
+def root():
+    """Serve the landing page at the root URL."""
+    return FileResponse(str(FRONTEND_DIR / "landing.html"))
+
+
+@app.get("/app", include_in_schema=False)
+def studio():
+    """Serve the main SQL Studio app."""
+    return FileResponse(str(FRONTEND_DIR / "index.html"))
+
+
+@app.get("/profile", include_in_schema=False)
+def profile():
+    """Serve the owner profile page."""
+    return FileResponse(str(FRONTEND_DIR / "profile.html"))
 
 
 @app.get("/schema")
@@ -41,7 +62,12 @@ def generate_and_execute(question: str, session: Session = Depends(get_session))
     sql_query = generate_sql(question, schema_str)
 
     if sql_query == "NOT_POSSIBLE":
-        return "error"
+        return {
+            "question": question,
+            "sql": None,
+            "results": [],
+            "message": "I couldn't generate a SQL query for that. Try asking something about your data — for example, 'Show me all users' or 'Count orders by status'."
+        }
     try:
         # Safety check: Prevent destructive queries (basic)
         if not sql_query.strip().lower().startswith("select"):

@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sujit Sadalage — SQL Studio AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&family=Space+Grotesk:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; scroll-behavior: smooth; }
+    body {
+      background: #000;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+    :root {
+      --purple: #a855f7;
+      --pink:   #ec4899;
+      --cyan:   #06b6d4;
+      --border: rgba(255,255,255,0.07);
+    }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: #000; }
+    ::-webkit-scrollbar-thumb { background: #1a1a1a; border-radius: 2px; }
+
+    /* bg — pure black, single line */
+    #bg-light {
+      position: fixed; inset: 0; z-index: 0;
+      pointer-events: none; overflow: hidden;
+      background: #000;
+    }
+    #diag-line {
+      position: absolute;
+      width: 1px;
+      height: 160vh;
+      bottom: -10vh;
+      left: 8vw;
+      transform-origin: bottom center;
+      transform: rotate(-42deg);
+      background: linear-gradient(
+        to top,
+        transparent 0%,
+        rgba(255,255,255,0.55) 50%,
+        transparent 100%
+      );
+      animation: line-travel 8s linear infinite;
+      will-change: transform;
+    }
+    @keyframes line-travel {
+      0%   { transform: rotate(-42deg) translateY(0);      opacity: 0; }
+      6%   { opacity: 1; }
+      94%  { opacity: 1; }
+      100% { transform: rotate(-42deg) translateY(-160vh); opacity: 0; }
+    }
+
+    /* nav — shared with landing */
+    .page { position: relative; z-index: 1; }
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      padding: 20px 40px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    @media (max-width: 640px) { nav { padding: 16px 20px; } }
+    .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .nav-logo-icon {
+      width: 28px; height: 28px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--purple), var(--pink));
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .nav-logo-name { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 15px; letter-spacing: -0.02em; color: #fff; }
+    .nav-badge { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 3px; padding: 2px 5px; }
+    .nav-links { display: flex; align-items: center; gap: 32px; }
+    .nav-links a { font-size: 13px; color: rgba(255,255,255,0.45); text-decoration: none; transition: color 0.2s; }
+    .nav-links a:hover { color: #fff; }
+    .nav-cta { font-size: 13px; font-weight: 500; color: #fff; text-decoration: none; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 16px; transition: background 0.2s, border-color 0.2s; }
+    .nav-cta:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.2); }
+    @media (max-width: 640px) { .nav-links a:not(.nav-cta) { display: none; } }
+
+    @keyframes fade-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.7s cubic-bezier(0.16,1,0.3,1), transform 0.7s cubic-bezier(0.16,1,0.3,1); }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .d1 { transition-delay: 0.1s; } .d2 { transition-delay: 0.2s; } .d3 { transition-delay: 0.3s; }
+
+    .reveal-left { opacity: 0; transform: translateX(-24px); transition: opacity 0.75s cubic-bezier(0.16,1,0.3,1), transform 0.75s cubic-bezier(0.16,1,0.3,1); }
+    .reveal-left.visible { opacity: 1; transform: translateX(0); }
+    .reveal-scale { opacity: 0; transform: scale(0.96); transition: opacity 0.7s cubic-bezier(0.16,1,0.3,1), transform 0.7s cubic-bezier(0.16,1,0.3,1); }
+    .reveal-scale.visible { opacity: 1; transform: scale(1); }
+
+    /* Instrument Serif usage */
+    .serif-name {
+      font-family: 'Instrument Serif', serif;
+      font-style: italic;
+      font-weight: 400;
+      letter-spacing: -0.01em;
+    }
+    .serif-quote {
+      font-family: 'Instrument Serif', serif;
+      font-style: italic;
+      font-size: clamp(20px, 3vw, 28px);
+      color: rgba(255,255,255,0.32);
+      line-height: 1.5;
+      letter-spacing: -0.01em;
+    }
+    /* Quote block */
+    .quote-block {
+      border-left: 2px solid rgba(168,85,247,0.25);
+      padding: 20px 28px;
+      margin-top: 56px;
+    }
+
+    .hr { border: none; height: 1px; background: rgba(255,255,255,0.05); margin: 0; }
+
+    /* ── Profile page layout ── */
+    .profile-hero {
+      min-height: 100svh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 120px 40px 80px;
+    }
+    .profile-card {
+      max-width: 760px;
+      width: 100%;
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 64px;
+      align-items: start;
+    }
+    @media (max-width: 640px) { .profile-card { grid-template-columns: 1fr; gap: 32px; } }
+
+    /* Avatar */
+    .avatar-col { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+    .avatar-ring {
+      width: 160px; height: 160px; border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.02);
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .avatar-ring::before {
+      content: '';
+      position: absolute; inset: -6px; border-radius: 50%;
+      background: conic-gradient(from 0deg, var(--purple), var(--pink), var(--cyan), var(--purple));
+      opacity: 0.25;
+      animation: spin 8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .avatar-inner {
+      width: 148px; height: 148px; border-radius: 50%;
+      background: #0a0a0a;
+      display: flex; align-items: center; justify-content: center;
+      position: relative; z-index: 1;
+    }
+    .avatar-initials {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 48px;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      background: linear-gradient(135deg, var(--purple), var(--pink));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .owner-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.25);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 4px;
+      padding: 4px 10px;
+    }
+
+    /* Info col */
+    .info-col { padding-top: 8px; }
+    .profile-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.2);
+      margin-bottom: 12px;
+    }
+    .profile-name {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(36px, 5vw, 56px);
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+    .profile-role {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 16px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.3);
+      letter-spacing: -0.02em;
+      margin-bottom: 28px;
+    }
+    .profile-role span {
+      background: linear-gradient(90deg, var(--purple), var(--pink));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-weight: 600;
+    }
+    .profile-bio {
+      font-size: 14px;
+      line-height: 1.75;
+      color: rgba(255,255,255,0.38);
+      max-width: 480px;
+      margin-bottom: 32px;
+    }
+
+    /* Links */
+    .profile-links { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 40px; }
+    .profile-link {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: rgba(255,255,255,0.35);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 6px;
+      padding: 6px 14px;
+      text-decoration: none;
+      transition: color 0.2s, border-color 0.2s, background 0.2s;
+    }
+    .profile-link:hover { color: #fff; border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.03); }
+
+    /* Stats */
+    .profile-stats {
+      display: flex; flex-wrap: wrap; gap: 0;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 0;
+    }
+    .pstat {
+      flex: 1; min-width: 100px;
+      padding: 16px 20px;
+      border-right: 1px solid rgba(255,255,255,0.06);
+    }
+    .pstat:last-child { border-right: none; }
+    .pstat-val { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 600; color: #fff; letter-spacing: -0.03em; }
+    .pstat-key { font-family: 'JetBrains Mono', monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.2); margin-top: 3px; }
+
+    /* Project section */
+    .section { max-width: 760px; margin: 0 auto; padding: 80px 40px; }
+    @media (max-width: 640px) { .section { padding: 60px 20px; } }
+    .section-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.2); margin-bottom: 20px; }
+    .section-title { font-family: 'Space Grotesk', sans-serif; font-size: clamp(24px, 3vw, 36px); font-weight: 600; letter-spacing: -0.03em; color: #fff; margin-bottom: 40px; }
+    .section-title span { color: rgba(255,255,255,0.25); font-weight: 300; }
+
+    .project-card {
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .project-card:hover { border-color: rgba(168,85,247,0.25); }
+    .project-top {
+      padding: 28px 28px 0;
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+    }
+    .project-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: linear-gradient(135deg, rgba(168,85,247,0.15), rgba(236,72,153,0.15));
+      border: 1px solid rgba(168,85,247,0.2);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .project-name { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 600; color: #fff; letter-spacing: -0.02em; margin-bottom: 6px; }
+    .project-desc { font-size: 13px; color: rgba(255,255,255,0.38); line-height: 1.65; max-width: 480px; }
+    .project-tags { display: flex; flex-wrap: wrap; gap: 8px; padding: 20px 28px 28px; }
+    .ptag {
+      font-family: 'JetBrains Mono', monospace; font-size: 10px;
+      color: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 4px; padding: 3px 8px; letter-spacing: 0.04em;
+    }
+    .project-open {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: 'JetBrains Mono', monospace; font-size: 11px;
+      color: rgba(255,255,255,0.4); text-decoration: none;
+      border: 1px solid rgba(255,255,255,0.08); border-radius: 7px;
+      padding: 6px 14px; transition: all 0.15s; flex-shrink: 0;
+    }
+    .project-open:hover { color: #fff; border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.03); }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid rgba(255,255,255,0.05);
+      padding: 28px 40px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 12px;
+    }
+    @media (max-width: 640px) { footer { padding: 20px; } }
+    .footer-copy { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: rgba(255,255,255,0.15); }
+    .footer-warn { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: rgba(255,255,255,0.1); }
+  </style>
+</head>
+<body>
+<div id="bg-light" aria-hidden="true"><div id="diag-line"></div></div>
+<div class="page">
+
+<!-- NAV -->
+<nav aria-label="Main navigation">
+  <a href="/" class="nav-logo" aria-label="SQL Studio AI home">
+    <div class="nav-logo-icon">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+        <path d="M2 4h10M2 7h7M2 10h5" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <span class="nav-logo-name">SQL Studio</span>
+    <span class="nav-badge">AI</span>
+  </a>
+  <div class="nav-links">
+    <a href="/">Landing</a>
+    <a href="#project">Project</a>
+    <a href="/app" class="nav-cta">Open Studio →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="profile-hero" aria-label="Profile">
+  <div class="profile-card">
+
+    <!-- Avatar col -->
+    <div class="avatar-col" style="opacity:0;animation:fade-up 0.7s cubic-bezier(0.16,1,0.3,1) 0.1s forwards">
+      <div class="avatar-ring" aria-hidden="true">
+        <div class="avatar-inner">
+          <span class="avatar-initials">SS</span>
+        </div>
+      </div>
+      <span class="owner-badge">Owner &amp; Builder</span>
+    </div>
+
+    <!-- Info col -->
+    <div class="info-col">
+      <p class="profile-label" style="opacity:0;animation:fade-up 0.6s cubic-bezier(0.16,1,0.3,1) 0.15s forwards">
+        Creator of SQL Studio AI
+      </p>
+      <h1 class="profile-name" style="opacity:0;animation:fade-up 0.7s cubic-bezier(0.16,1,0.3,1) 0.22s forwards">
+        Sujit<br><span class="serif-name">Sadalage</span>
+      </h1>
+      <p class="profile-role" style="opacity:0;animation:fade-up 0.7s cubic-bezier(0.16,1,0.3,1) 0.32s forwards">
+        <span>AI &amp; Backend Engineer</span> · Python · PostgreSQL
+      </p>
+      <p class="profile-bio" style="opacity:0;animation:fade-up 0.7s cubic-bezier(0.16,1,0.3,1) 0.42s forwards">
+        Built SQL Studio AI — a natural language interface for PostgreSQL powered by Groq and
+        llama-3.1. The project lets you query any database in plain English and get back
+        real results, instantly. No SQL knowledge required.
+      </p>
+
+      <div class="profile-links" style="opacity:0;animation:fade-up 0.7s cubic-bezier(0.16,1,0.3,1) 0.50s forwards"
+           role="list" aria-label="Links">
+        <a href="/app" class="profile-link" role="listitem" aria-label="Open SQL Studio">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <path d="M2 4h10M2 7h7M2 10h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          SQL Studio
+        </a>
+        <a href="/" class="profile-link" role="listitem" aria-label="Landing page">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <path d="M2 8L7 3l5 5M4 7v6h2v-3h2v3h2V7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Home
+        </a>
+        <a href="mailto:sujitsadalage@email.com" class="profile-link" role="listitem" aria-label="Email Sujit">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <rect x="1" y="3" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M1 5l6 4 6-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          Contact
+        </a>
+      </div>
+
+      <div class="profile-stats" style="opacity:0;animation:fade-up 0.7s cubic-bezier(0.16,1,0.3,1) 0.58s forwards"
+           role="list" aria-label="Project stats">
+        <div class="pstat" role="listitem">
+          <div class="pstat-val">~200ms</div>
+          <div class="pstat-key">Query Time</div>
+        </div>
+        <div class="pstat" role="listitem">
+          <div class="pstat-val">llama-3.1</div>
+          <div class="pstat-key">LLM Model</div>
+        </div>
+        <div class="pstat" role="listitem">
+          <div class="pstat-val">Groq</div>
+          <div class="pstat-key">Inference</div>
+        </div>
+        <div class="pstat" role="listitem">
+          <div class="pstat-val">SELECT</div>
+          <div class="pstat-key">Read-safe</div>
+        </div>
+      </div>
+
+      <!-- Instrument Serif quote -->
+      <div class="quote-block" style="opacity:0;animation:fade-up 0.7s cubic-bezier(0.16,1,0.3,1) 0.68s forwards">
+        <p class="serif-quote">"Your data should answer you,<br>not the other way around."</p>
+        <p style="margin-top:10px;font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(255,255,255,0.18);letter-spacing:0.06em;">— Sujit Sadalage</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="hr" />
+
+<!-- PROJECT SECTION -->
+<section id="project" aria-labelledby="proj-heading">
+  <div class="section">
+    <div class="reveal">
+      <div class="section-label">The project</div>
+      <h2 id="proj-heading" class="section-title">SQL Studio AI<br><span style="font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:rgba(255,255,255,0.28);">built by Sujit Sadalage.</span></h2>
+    </div>
+
+    <div class="project-card reveal-scale d1">
+      <div class="project-top">
+        <div>
+          <div class="project-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 14 14" fill="none">
+              <path d="M2 4h10M2 7h7M2 10h5" stroke="rgba(168,85,247,0.8)" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+        <a href="/app" class="project-open" aria-label="Open SQL Studio">
+          Open Studio
+          <svg width="11" height="11" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+      </div>
+      <div style="padding: 16px 28px 4px;">
+        <div class="project-name">SQL Studio AI</div>
+        <p class="project-desc">
+          A full-stack natural language → SQL system. Ask any question about your PostgreSQL database
+          in plain English and get back real query results in milliseconds. The LLM receives your live
+          schema to generate valid, safe SQL — and only SELECT queries ever run.
+        </p>
+      </div>
+      <div class="project-tags">
+        <span class="ptag">FastAPI</span>
+        <span class="ptag">PostgreSQL</span>
+        <span class="ptag">Groq</span>
+        <span class="ptag">llama-3.1-8b-instant</span>
+        <span class="ptag">SQLModel</span>
+        <span class="ptag">React 18</span>
+        <span class="ptag">Python 3.11</span>
+        <span class="ptag">Natural Language → SQL</span>
+        <span class="ptag">SELECT-only guard</span>
+        <span class="ptag">CSV Export</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="hr" />
+
+<!-- FOOTER -->
+<footer role="contentinfo">
+  <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+    <a href="/" style="display:flex;align-items:center;gap:8px;text-decoration:none;">
+      <div class="nav-logo-icon" style="width:20px;height:20px;" aria-hidden="true">
+        <svg width="10" height="10" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+          <path d="M2 4h10M2 7h7M2 10h5" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <span class="footer-copy">SQL Studio AI</span>
+    </a>
+    <span class="footer-copy" style="color:rgba(255,255,255,0.08)">·</span>
+    <span class="footer-copy">Built by Sujit Sadalage · © 2026</span>
+  </div>
+  <span class="footer-warn">Always verify generated SQL before production use.</span>
+</footer>
+
+</div><!-- end .page -->
+
+<script>
+/* parallax */
+(function () {
+  const bg = document.getElementById('bg-light');
+  if (!bg) return;
+  let ticking = false;
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      requestAnimationFrame(() => {
+        bg.style.transform = `translateY(${window.scrollY * 0.06}px)`;
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }, { passive: true });
+})();
+
+/* scroll reveal — all variants */
+(function () {
+  const els = document.querySelectorAll('.reveal, .reveal-left, .reveal-scale');
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+  }, { threshold: 0.10, rootMargin: '0px 0px -30px 0px' });
+  els.forEach(el => obs.observe(el));
+})();
+</script>
+</body>
+</html>
