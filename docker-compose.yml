@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      # Connect to host PostgreSQL (from container perspective)
+      DATABASE_URL: postgresql://postgres:Sujit1661@host.docker.internal:5432/postgres
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/schema"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
