@@ -473,24 +473,27 @@
       max-width: 720px;
       margin: 0 auto;
     }
-    /* Glow wrapper — sits OUTSIDE input-inner so overflow:hidden doesn't clip it */
+    /* Glow wrapper — sits OUTSIDE input-inner for proper overflow and glow */
     .input-glow-wrap {
       position: relative;
-      border-radius: 13px;
-      padding: 1px; /* border thickness */
-      background: rgba(255,255,255,0.09);
-      transition: background 0.3s;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.07);
+      transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
+      box-shadow: 0 0 0 0 transparent;
     }
     .input-form:focus-within .input-glow-wrap {
-      background: linear-gradient(90deg, var(--purple), var(--pink), var(--cyan));
+      background: linear-gradient(90deg, rgba(168,85,247,0.6), rgba(236,72,153,0.6), rgba(6,182,212,0.6));
+      box-shadow: 0 0 20px -2px rgba(168,85,247,0.3);
     }
     .input-inner {
       display: flex;
       align-items: center;
+      gap: 0;
       background: #0a0a0a;
-      border-radius: 12px;
+      border-radius: 11px;
       overflow: hidden;
       position: relative;
+      margin: 1px;
     }
     .input-field {
       flex: 1;

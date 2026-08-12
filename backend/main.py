@@ -10,11 +10,23 @@ from sqlmodel import Session, text
 from db import get_session
 from schema import get_db_schema, format_schema_for_llm
 from llm import generate_sql
+from init_db import init_database
 
 # Resolve the frontend directory relative to this file
 FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
 
 app = FastAPI()
+
+# Initialize database on startup
+@app.on_event("startup")
+def startup_event():
+    """Initialize database with sample data if empty (optional)."""
+    # Disabled — using existing local PostgreSQL database
+    # Uncomment to auto-create sample tables if needed
+    # try:
+    #     init_database()
+    # except Exception as e:
+    #     print(f"Database init warning: {e}")
 
 app.add_middleware(
     CORSMiddleware,

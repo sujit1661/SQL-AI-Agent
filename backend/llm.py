@@ -26,9 +26,9 @@ Rules:
 - Use only tables and columns that exist in the schema above.
 - Never invent table or column names.
 - Use ILIKE for case-insensitive text searches.
-- Use JOINs only when a valid foreign key relationship exists.
-- For greetings, unrelated questions, or impossible requests output: NOT_POSSIBLE
-- Output the raw SQL only — no markdown, no explanation, no backticks."""
+- Use JOINs when needed with valid foreign key relationships.
+- For greetings, off-topic, or impossible requests: output exactly "NOT_POSSIBLE"
+- Output ONLY the SQL query — no markdown, no explanation, no backticks, no comments."""
 
     try:
         completion = client.chat.completions.create(
@@ -43,29 +43,29 @@ Rules:
         )
 
         raw = completion.choices[0].message.content or ""
+        raw = raw.strip()
 
-        # Strip thinking tags (some models emit <think>...</think>)
+        # Handle thinking tags
         if "</think>" in raw:
-            raw = raw.split("</think>")[-1]
+            raw = raw.split("</think>")[-1].strip()
 
         # Strip markdown code fences
         raw = re.sub(r"```(?:sql)?", "", raw, flags=re.IGNORECASE)
         raw = raw.replace("```", "").strip()
 
-        # If the model snuck in an explanation before the SQL, extract the first SELECT
-        if raw.upper().startswith("NOT_POSSIBLE"):
+        # Check for NOT_POSSIBLE
+        if raw.upper() == "NOT_POSSIBLE":
             return "NOT_POSSIBLE"
 
-        # Pull out the first SELECT … ; block if surrounded by prose
-        match = re.search(r"(SELECT\b.*?)(?:;|$)", raw, re.IGNORECASE | re.DOTALL)
+        # Extract SELECT statement (handles if there's prose around it)
+        match = re.search(r"(SELECT\b.+?)(?:;|$)", raw, re.IGNORECASE | re.DOTALL)
         if match:
             sql = match.group(1).strip()
-            # Add back trailing semicolon if it was captured
-            if raw.rstrip().endswith(";"):
+            if not sql.endswith(";"):
                 sql += ";"
             return sql
 
-        # If nothing looks like SQL at all, give up
+        # No valid SQL found
         return "NOT_POSSIBLE"
 
     except Exception as e:
